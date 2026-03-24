@@ -353,8 +353,9 @@
             padding: 12px 16px;
             border-radius: 12px;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             word-wrap: break-word;
+            overflow-x: auto;
         }
 
         .message.agent .message-content {
@@ -366,6 +367,134 @@
         .message.user .message-content {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
+        }
+
+        /* Markdown Styling */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            margin: 12px 0 8px 0;
+            font-weight: 700;
+        }
+
+        .message-content h1 {
+            font-size: 18px;
+        }
+
+        .message-content h2 {
+            font-size: 16px;
+        }
+
+        .message-content h3 {
+            font-size: 15px;
+        }
+
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            font-size: 14px;
+        }
+
+        .message-content p {
+            margin: 8px 0;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+        }
+
+        .message-content blockquote {
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            margin: 8px 0;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        .message-content code {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .message-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+
+        .message-content table th,
+        .message-content table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .message-content table th {
+            background: rgba(99, 102, 241, 0.1);
+            font-weight: 600;
+        }
+
+        .message-content table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .message-content a {
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .message-content a:hover {
+            opacity: 0.8;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 12px 0;
+        }
+
+        .message-content strong {
+            font-weight: 700;
+        }
+
+        .message-content em {
+            font-style: italic;
+        }
+
+        .message-content del {
+            opacity: 0.6;
+            text-decoration: line-through;
         }
 
         .typing-indicator {
@@ -795,7 +924,87 @@
     </div>
 
     <script>
-        // Configuration
+        // Simple Markdown parser
+        function parseMarkdown(text) {
+            if (!text) return text;
+            
+            let html = text;
+
+            // Escape HTML
+            html = html.replace(/&/g, '&amp;')
+                       .replace(/</g, '&lt;')
+                       .replace(/>/g, '&gt;');
+
+            // Re-unescape code blocks and inline code (will handle separately)
+            // Code blocks (triple backticks)
+            html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+                return `<pre><code>${code.trim()}</code></pre>`;
+            });
+
+            // Inline code (single backticks)
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Headers
+            html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+
+            // Horizontal rule
+            html = html.replace(/^---$/gm, '<hr>');
+            html = html.replace(/^\*\*\*$/gm, '<hr>');
+
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+            // Italic
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+
+            // Strikethrough
+            html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
+
+            // Links
+            html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+            // Blockquotes
+            html = html.replace(/^&gt; (.*?)$/gm, '<blockquote>$1</blockquote>');
+
+            // Unordered lists
+            html = html.replace(/^\* (.*?)$/gm, '<li>$1</li>');
+            html = html.replace(/^- (.*?)$/gm, '<li>$1</li>');
+            html = html.replace(/^(\d+)\. (.*?)$/gm, '<li>$2</li>');
+            html = html.replace(/(<li>.*?<\/li>)/s, (match) => {
+                return '<ul>' + match + '</ul>';
+            });
+
+            // Tables
+            html = html.replace(/\|(.+?)\|/g, (match, content) => {
+                const cells = content.split('|').filter(c => c.trim());
+                const isHeader = content.includes('---') || content.match(/:\-+:|---/);
+                if (cells.length > 0) {
+                    const cellHtml = cells.map(cell => {
+                        return `<td>${cell.trim().replace(/^[\s\-:]+$/, '')}</td>`;
+                    }).join('');
+                    return `<tr>${cellHtml}</tr>`;
+                }
+                return match;
+            });
+
+            html = html.replace(/(<tr>.*?<\/tr>)/s, (match) => {
+                return '<table>' + match + '</table>';
+            });
+
+            // Line breaks
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p><\/p>/g, '');
+
+            // Wrap in div for safety
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            return div;
+        }
         let config = {
             apiKey: 'sk-default-ABArLtiK6BPljuSx0HRHwPpmI5Af5qN5',
             userId: 'saiasham@pronixinc.com',
@@ -938,7 +1147,14 @@
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.textContent = content;
+
+            // Parse Markdown for agent messages, plain text for user messages
+            if (role === 'agent') {
+                const parsed = parseMarkdown(content);
+                contentDiv.appendChild(parsed);
+            } else {
+                contentDiv.textContent = content;
+            }
 
             messageDiv.appendChild(avatar);
             messageDiv.appendChild(contentDiv);
