@@ -1005,6 +1005,39 @@
             div.innerHTML = html;
             return div;
         }
+
+        function formatDecisionMakers(text) {
+            if (!text.includes("Decision Makers or Relevant Roles")) {
+                return text;
+            }
+        
+            const sectionStart = text.indexOf("Decision Makers or Relevant Roles");
+            const beforeSection = text.substring(0, sectionStart);
+            const sectionText = text.substring(sectionStart);
+        
+            const lines = sectionText.split('\n');
+            let formatted = [];
+            formatted.push("\n## Decision Makers or Relevant Roles\n");
+        
+            for (let line of lines) {
+                if (line.includes('|')) {
+                    const parts = line.split('|').map(p => p.trim()).filter(p => p);
+        
+                    if (parts.length >= 5) {
+                        formatted.push(`
+        **Name:** ${parts[0]}  
+        **Title:** ${parts[1]}  
+        **Company:** ${parts[2]}  
+        **Email:** ${parts[3]}  
+        **LinkedIn:** ${parts[4]}  
+        ---
+                        `);
+                    }
+                }
+            }
+        
+            return beforeSection + formatted.join('\n');
+        }
         let config = {
             apiKey: 'sk-default-ABArLtiK6BPljuSx0HRHwPpmI5Af5qN5',
             userId: 'saiasham@pronixinc.com',
@@ -1108,6 +1141,10 @@
                 }
 
                 removeTypingIndicator();
+
+                // Format Decision Makers section
+                agentMessage = formatDecisionMakers(agentMessage);
+
                 addMessageToUI('agent', agentMessage);
 
                 // Add to conversation
